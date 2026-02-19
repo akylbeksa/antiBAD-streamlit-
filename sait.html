@@ -1,0 +1,1664 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="antiBAD — AI-powered infrastructure auditing: detect road damage, score severity, build heatmaps, and prevent unnecessary public spending." />
+  <title>antiBAD — Smart Eyes for Honest Budgets</title>
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="antiBAD — Smart Eyes for Honest Budgets" />
+  <meta property="og:description" content="AI audits roads and sidewalks using existing cameras. Detect defects, score severity, prioritize repairs, and flag unnecessary budget requests." />
+  <meta property="og:type" content="website" />
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    
+    :root{
+      --bg: #070A12;
+      --panel: rgba(255,255,255,.06);
+      --panel2: rgba(255,255,255,.08);
+      --text: rgba(255,255,255,.92);
+      --muted: rgba(255,255,255,.68);
+      --line: rgba(255,255,255,.12);
+      --brand: #7C3AED;
+      --brand2: #22D3EE;
+      --good: #22c55e;
+      --warn: #f59e0b;
+      --bad: #ef4444;
+
+      --radius: 18px;
+      --shadow: 0 20px 60px rgba(0,0,0,.45);
+      --max: 100%;
+    }
+
+    [data-theme="light"]{
+      --bg: #F7F8FF;
+      --panel: rgba(0,0,0,.05);
+      --panel2: rgba(0,0,0,.07);
+      --text: rgba(5,10,18,.92);
+      --muted: rgba(5,10,18,.64);
+      --line: rgba(5,10,18,.12);
+      --shadow: 0 18px 50px rgba(0,0,0,.12);
+    }
+
+    *{ box-sizing: border-box; }
+    /* ===== Smooth Theme Transition ===== */
+html, body, header, section, footer,
+.card, .tile, .kpi, .metric, .step,
+.btn, .pill, details, .preview, .drop,
+input, textarea {
+
+  transition:
+    background-color .35s ease,
+    background .35s ease,
+    color .35s ease,
+    border-color .35s ease,
+    box-shadow .35s ease;
+}
+
+    html,body{ height:100%; }
+    body{
+      margin:0;
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      overflow-x:hidden;
+      position: relative;
+      transition: 
+  background-color .35s ease,
+  color .35s ease;
+
+    }
+
+    /* ✅ One continuous background for the whole page (no seams) */
+    body::before{
+      content:"";
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      pointer-events:none;
+      background:
+        radial-gradient(1200px 600px at 18% 10%, rgba(124,58,237,.28), transparent 60%),
+        radial-gradient(1000px 520px at 88% 18%, rgba(34,211,238,.22), transparent 62%),
+        radial-gradient(900px 680px at 50% 98%, rgba(124,58,237,.18), transparent 62%),
+        linear-gradient(180deg, rgba(0,0,0,.00), rgba(0,0,0,.08));
+      transform: translateZ(0);
+    }
+
+    [data-theme="light"] body::before{
+      background:
+        radial-gradient(1200px 600px at 18% 10%, rgba(124,58,237,.16), transparent 60%),
+        radial-gradient(1000px 520px at 88% 18%, rgba(34,211,238,.14), transparent 62%),
+        radial-gradient(900px 680px at 50% 98%, rgba(124,58,237,.10), transparent 62%),
+        linear-gradient(180deg, rgba(255,255,255,.00), rgba(0,0,0,.04));
+    }
+
+    a{ color:inherit; text-decoration:none; }
+    .container{ width: 100%;
+  max-width: 1920px;
+  margin: 0 auto;
+  padding: 0 60px;  }
+
+    /* Top nav */
+    header{
+      position: sticky; top:0; z-index: 50;
+      backdrop-filter: blur(14px);
+      background: rgba(0,0,0,.22);
+      border-bottom: 1px solid rgba(255,255,255,.08);
+    }
+    [data-theme="light"] header{
+      background: rgba(255,255,255,.58);
+      border-bottom: 1px solid rgba(0,0,0,.08);
+    }
+
+    .nav{
+  display:flex;
+  align-items:center;
+  justify-content:space-between; /* вместо center */
+  padding: 14px 0;
+  gap: 20px; /* убрать 300px */
+    }
+
+    .brand{
+      display:flex; align-items:center; gap:10px;
+      font-weight: 800;
+      letter-spacing: .2px;
+    }
+    .logo{
+      width: 38px; height: 38px; border-radius: 12px;
+      background: conic-gradient(from 210deg, var(--brand), var(--brand2), var(--brand));
+      box-shadow: 0 10px 30px rgba(124,58,237,.25);
+      position: relative;
+    }
+    .logo:after{
+      content:"";
+      position:absolute; inset: 9px;
+      border-radius: 10px;
+      background: rgba(0,0,0,.45);
+      border:1px solid rgba(255,255,255,.10);
+    }
+    [data-theme="light"] .logo:after{ background: rgba(255,255,255,.75); }
+
+    nav .links{
+      display:flex;
+      align-items:center;
+      gap: 36px;
+      color: var(--muted);
+      font-weight: 500;
+      font-size: 14px;
+    }
+    nav .links a{ padding: 8px 10px; border-radius: 12px; }
+    nav .links a:hover{ background: var(--panel); color: var(--text); }
+
+    .nav-actions{ display:flex; align-items:center; gap:10px; }
+
+    .btn{
+      display:inline-flex; align-items:center; justify-content:center;
+      gap:10px;
+      padding: 10px 14px;
+      border-radius: 14px;
+      border: 1px solid var(--line);
+      background: var(--panel);
+      color: var(--text);
+      font-weight: 600;
+      font-size: 14px;
+      transition: transform .15s ease, background .15s ease, border-color .15s ease;
+      cursor:pointer;
+      user-select:none;
+    }
+    .btn:hover{ transform: translateY(-1px); background: var(--panel2); border-color: rgba(255,255,255,.18); }
+    [data-theme="light"] .btn:hover{ border-color: rgba(0,0,0,.16); }
+
+    .btn.primary{
+      border: none;
+      background: linear-gradient(135deg, var(--brand), var(--brand2));
+      color: white;
+      box-shadow: 0 16px 40px rgba(124,58,237,.25);
+    }
+    .btn.primary:hover{ transform: translateY(-1px); filter: brightness(1.02); }
+
+    .pill{
+      display:inline-flex; align-items:center; gap:8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.04);
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+    }
+    [data-theme="light"] .pill{ background: rgba(0,0,0,.03); }
+
+    /* Hero */
+    .hero{ padding: 52px 0 18px; }
+    .hero-grid{
+      display:block;
+    }
+    @media (max-width: 980px){
+      .hero-grid{ grid-template-columns: 1fr; }
+      nav .links{ display:none; }
+    }
+
+    h1{
+      font-size: clamp(34px, 4vw, 54px);
+      line-height: 1.03;
+      margin: 14px 0 12px;
+      letter-spacing: -1px;
+    }
+    .gradient{
+      background: linear-gradient(90deg, var(--brand), var(--brand2));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+    .lead{
+      color: var(--muted);
+      font-size: 16px;
+      line-height: 1.65;
+      max-width: 62ch;
+    }
+
+    .hero-actions{ display:flex; gap: 10px; margin-top: 18px; flex-wrap: wrap; }
+
+    .card{
+      background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.04));
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+    [data-theme="light"] .card{
+      background: linear-gradient(180deg, rgba(255,255,255,.92), rgba(255,255,255,.72));
+    }
+
+    .hero-panel{ padding: 18px; position: relative; overflow:hidden; }
+    .hero-panel:before{
+      content:"";
+      position:absolute; inset:-80px;
+      background: radial-gradient(420px 260px at 18% 12%, rgba(124,58,237,.24), transparent 62%),
+                  radial-gradient(460px 300px at 90% 28%, rgba(34,211,238,.22), transparent 62%);
+      opacity:.95;
+      pointer-events:none;
+    }
+    .hero-panel > *{ position:relative; }
+
+    .kpi-grid{
+      display:grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-top: 14px;
+    }
+    @media (max-width: 540px){ .kpi-grid{ grid-template-columns: 1fr; } }
+
+    .kpi{
+      padding: 14px;
+      border-radius: 16px;
+      border: 1px solid var(--line);
+      background: rgba(0,0,0,.20);
+    }
+    [data-theme="light"] .kpi{ background: rgba(255,255,255,.70); }
+    .kpi .num{ font-size: 22px; font-weight: 900; letter-spacing: -0.4px; }
+    .kpi .lbl{ color: var(--muted); font-size: 13px; margin-top: 4px; font-weight: 700; }
+
+    /* Sections */
+    section{ padding: 22px 0; }
+    .section-head{
+      display:flex; align-items:flex-end; justify-content:space-between;
+      gap: 16px;
+      margin-bottom: 12px;
+    }
+    h2{
+      margin:0;
+      font-size: 22px;
+      letter-spacing: -0.3px;
+    }
+    .sub{
+      color: var(--muted);
+      margin: 6px 0 0;
+      font-size: 14px;
+      line-height: 1.6;
+      max-width: 74ch;
+    }
+
+    .grid-3{
+      display:grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+    }
+    @media (max-width: 980px){ .grid-3{ grid-template-columns: 1fr; } }
+
+    .tile{
+      padding: 16px;
+      border-radius: 18px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.04);
+    }
+    [data-theme="light"] .tile{ background: rgba(255,255,255,.82); }
+
+    .tile h3{ margin: 0 0 8px; font-size: 16px; }
+    .tile p{ margin: 0; color: var(--muted); font-size: 14px; line-height: 1.65; }
+
+    .icon{
+      width: 42px; height: 42px; border-radius: 14px;
+      background: rgba(124,58,237,.16);
+      border:1px solid rgba(124,58,237,.28);
+      display:grid; place-items:center;
+      margin-bottom: 10px;
+    }
+    [data-theme="light"] .icon{ background: rgba(124,58,237,.10); }
+    .icon svg{ width: 22px; height: 22px; }
+
+    /* Demo */
+    .demo{
+      display:grid;
+      grid-template-columns: 1.05fr .95fr;
+      gap: 14px;
+      align-items: stretch;
+    }
+    @media (max-width: 980px){ .demo{ grid-template-columns: 1fr; } }
+
+    .demo-box{ padding: 16px; }
+
+    .drop{
+      border: 1px dashed rgba(255,255,255,.25);
+      border-radius: 18px;
+      padding: 16px;
+      background: rgba(0,0,0,.16);
+      display:grid; gap: 10px;
+    }
+    [data-theme="light"] .drop{
+      background: rgba(255,255,255,.66);
+      border-color: rgba(0,0,0,.18);
+    }
+
+    .drop small{ color: var(--muted); }
+
+    .preview{
+      border-radius: 16px;
+      overflow:hidden;
+      border: 1px solid var(--line);
+      background: rgba(0,0,0,.20);
+      min-height: 240px;
+      display:grid; place-items:center;
+      position: relative;
+    }
+    [data-theme="light"] .preview{ background: rgba(255,255,255,.66); }
+
+    .preview img{ width:100%; height:100%; object-fit: cover; display:none; }
+    .preview .ph{ padding: 22px; text-align:center; color: var(--muted); }
+
+    .tags{ display:flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+    .tag{
+      font-size: 12px;
+      font-weight: 800;
+      padding: 7px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.04);
+      color: var(--muted);
+    }
+
+    /* Heatmap mock */
+    .heatmap{
+      border-radius: 18px;
+      border: 1px solid var(--line);
+      background:
+        radial-gradient(120px 90px at 20% 30%, rgba(239,68,68,.42), transparent 60%),
+        radial-gradient(140px 110px at 60% 40%, rgba(245,158,11,.35), transparent 60%),
+        radial-gradient(160px 120px at 80% 70%, rgba(34,197,94,.28), transparent 60%),
+        linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
+      height: 240px;
+      position: relative;
+      overflow:hidden;
+    }
+    [data-theme="light"] .heatmap{
+      background:
+        radial-gradient(120px 90px at 20% 30%, rgba(239,68,68,.26), transparent 60%),
+        radial-gradient(140px 110px at 60% 40%, rgba(245,158,11,.20), transparent 60%),
+        radial-gradient(160px 120px at 80% 70%, rgba(34,197,94,.16), transparent 60%),
+        linear-gradient(180deg, rgba(0,0,0,.04), rgba(0,0,0,.02));
+    }
+
+    .legend{
+      display:flex; gap: 10px; flex-wrap: wrap;
+      margin-top: 12px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .dot{ width: 10px; height: 10px; border-radius: 999px; display:inline-block; margin-right: 6px; }
+    .dot.bad{ background: var(--bad); }
+    .dot.warn{ background: var(--warn); }
+    .dot.good{ background: var(--good); }
+
+    /* Market */
+    .market{
+      display:grid; grid-template-columns: 1fr 1fr; gap: 14px;
+    }
+    @media (max-width: 980px){ .market{ grid-template-columns: 1fr; } }
+
+    .metric{
+      padding: 16px;
+      border-radius: 18px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.04);
+    }
+    [data-theme="light"] .metric{ background: rgba(255,255,255,.82); }
+
+    .metric .top{ display:flex; align-items:center; justify-content:space-between; gap: 10px; }
+    .metric .name{ font-weight: 900; letter-spacing: -0.2px; }
+    .metric .val{ font-weight: 900; font-size: 18px; }
+    .metric p{ margin: 10px 0 0; color: var(--muted); font-size: 14px; line-height: 1.65; }
+
+    /* Timeline */
+    .timeline{ display:grid; grid-template-columns: 1fr; gap: 10px; }
+    .step{
+      display:flex; gap: 12px;
+      padding: 14px;
+      border-radius: 18px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.04);
+    }
+    [data-theme="light"] .step{ background: rgba(255,255,255,.82); }
+
+    .badge{
+      flex: 0 0 auto;
+      width: 34px; height: 34px;
+      border-radius: 12px;
+      display:grid; place-items:center;
+      font-weight: 900;
+      background: rgba(124,58,237,.16);
+      border: 1px solid rgba(124,58,237,.25);
+      color: var(--text);
+    }
+    .step h4{ margin: 0; font-size: 15px; }
+    .step p{ margin: 6px 0 0; color: var(--muted); font-size: 14px; line-height: 1.65; }
+
+    /* FAQ */
+    details{
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: rgba(255,255,255,.04);
+      padding: 14px 14px;
+    }
+    [data-theme="light"] details{ background: rgba(255,255,255,.82); }
+    details + details{ margin-top: 10px; }
+    summary{ cursor:pointer; font-weight: 900; }
+    details p{ margin: 10px 0 0; color: var(--muted); line-height: 1.65; }
+
+    /* Footer */
+    footer{
+      padding: 26px 0 40px;
+      color: var(--muted);
+      border-top: 1px solid rgba(255,255,255,.10);
+      margin-top: 12px;
+      background: rgba(0,0,0,.08);
+    }
+    [data-theme="light"] footer{
+      border-top: 1px solid rgba(0,0,0,.10);
+      background: rgba(255,255,255,.45);
+    }
+
+    /* Reveal animations */
+    .reveal{ opacity: 0; transform: translateY(12px); transition: opacity .6s ease, transform .6s ease; }
+    .reveal.on{ opacity: 1; transform: translateY(0); }
+    /* Smooth FAQ animation */
+details{
+  overflow: hidden; /* so height animation looks clean */
+}
+
+details summary{
+  list-style: none;
+}
+details summary::-webkit-details-marker{ display:none; }
+
+/* Animate the answer block */
+details .faq-body{
+  max-height: 0;
+  opacity: 0;
+  transform: translateY(-6px);
+  transition: max-height .35s ease, opacity .25s ease, transform .25s ease;
+  will-change: max-height, opacity, transform;
+  padding-top: 0;
+}
+
+details[open] .faq-body{
+  max-height: 420px; /* enough for your text */
+  opacity: 1;
+  transform: translateY(0);
+  padding-top: 10px;
+}
+/* Smooth FAQ (JS-driven height animation) */
+details.faq-item summary { cursor: pointer; }
+details.faq-item summary::-webkit-details-marker { display:none; }
+
+details.faq-item .faq-body{
+  height: 0;
+  overflow: hidden;
+  opacity: 0;
+  transform: translateY(-6px);
+  transition: height .32s ease, opacity .22s ease, transform .22s ease;
+  will-change: height, opacity, transform;
+}
+
+details.faq-item[open] .faq-body{
+  opacity: 1;
+  transform: translateY(0);
+}
+
+details.faq-item .faq-inner{
+  padding-top: 10px; /* spacing below summary */
+}
+/* =========================================================
+   antiBAD Unified Theme System (harmonious dark + light)
+   Paste ONCE at the VERY END of <style>
+   ========================================================= */
+
+/* Base tokens (used by both themes) */
+body{
+  color: var(--text);
+  background: var(--bg);
+}
+
+/* --- DARK THEME (black + red, premium, not “blood”) --- */
+body[data-theme="dark"]{
+  --bg: #06070B;
+  --text: rgba(255,255,255,.92);
+  --muted: rgba(255,255,255,.68);
+  --line: rgba(255,255,255,.12);
+
+  --panel: rgba(255,255,255,.06);
+  --panel2: rgba(255,255,255,.09);
+
+  --brand: #ff2a2a;
+  --brand2: #b30000;
+
+  --shadow: 0 20px 60px rgba(0,0,0,.55);
+
+  /* Glow colors (subtle, clean) */
+  --glow1: rgba(255,42,42,.16);
+  --glow2: rgba(179,0,0,.12);
+  --glow3: rgba(255,42,42,.10);
+  --glowFade: rgba(0,0,0,.10);
+}
+
+/* --- LIGHT THEME (white + red, clean enterprise) --- */
+body[data-theme="light"]{
+  --bg: #ffffff;
+  --text: rgba(10,12,18,.92);
+  --muted: rgba(10,12,18,.62);
+  --line: rgba(10,12,18,.14);
+
+  --panel: rgba(10,12,18,.04);
+  --panel2: rgba(10,12,18,.06);
+
+  --brand: #d40000;
+  --brand2: #ff2a2a;
+
+  --shadow: 0 14px 34px rgba(0,0,0,.10);
+
+  /* Glow colors (VERY soft, harmonious, not smears) */
+  --glow1: rgba(255,42,42,.045);
+  --glow2: rgba(212,0,0,.030);
+  --glow3: rgba(255,42,42,.022);
+  --glowFade: rgba(0,0,0,.03);
+}
+
+/* --- One continuous background that adapts by theme --- */
+body::before{
+  background:
+    radial-gradient(1100px 520px at 14% 6%, var(--glow1), transparent 72%),
+    radial-gradient(980px 520px at 88% 14%, var(--glow2), transparent 74%),
+    radial-gradient(900px 700px at 52% 98%, var(--glow3), transparent 76%),
+    linear-gradient(180deg, rgba(0,0,0,0), var(--glowFade)) !important;
+}
+
+/* --- Header polish per theme --- */
+body[data-theme="dark"] header{
+  background: rgba(0,0,0,.38) !important;
+  border-bottom: 1px solid rgba(255,255,255,.08) !important;
+}
+body[data-theme="light"] header{
+  background: rgba(255,255,255,.86) !important;
+  border-bottom: 1px solid rgba(10,12,18,.10) !important;
+}
+
+/* --- Cards/tiles visibility (fix “boxes barely visible” in light) --- */
+body[data-theme="light"] .card,
+body[data-theme="light"] .tile,
+body[data-theme="light"] .metric,
+body[data-theme="light"] .step,
+body[data-theme="light"] details,
+body[data-theme="light"] .kpi,
+body[data-theme="light"] .drop,
+body[data-theme="light"] .preview{
+  background: rgba(255,255,255,.96) !important;
+  border: 1px solid rgba(10,12,18,.16) !important;
+  box-shadow: 0 10px 26px rgba(0,0,0,.08) !important;
+}
+
+/* --- Buttons (consistent across themes) --- */
+.btn{
+  background: var(--panel) !important;
+  border-color: var(--line) !important;
+}
+.btn:hover{
+  background: var(--panel2) !important;
+}
+.btn.primary{
+  border: none !important;
+  background: linear-gradient(135deg, var(--brand), var(--brand2)) !important;
+  box-shadow: 0 14px 34px rgba(255,42,42,.18) !important;
+}
+body[data-theme="light"] .btn.primary{
+  box-shadow: 0 10px 22px rgba(212,0,0,.16) !important;
+}
+
+/* --- Accent text gradient (safe, no red rectangles) --- */
+.gradient{
+  background: linear-gradient(90deg, var(--brand), var(--brand2)) !important;
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  color: transparent !important;
+}
+
+/* --- Icons & step badges inherit brand nicely --- */
+.icon{
+  background: color-mix(in srgb, var(--brand) 14%, transparent) !important;
+  border-color: color-mix(in srgb, var(--brand) 28%, transparent) !important;
+}
+.badge{
+  background: color-mix(in srgb, var(--brand) 14%, transparent) !important;
+  border-color: color-mix(in srgb, var(--brand) 24%, transparent) !important;
+}
+header nav.links{
+  display:flex !important;
+  gap: 40px !important;
+}
+/* =========================
+   antiBAD — Premium Dark Red UI
+   Paste at END of <style>
+   ========================= */
+
+/* Core tokens (dark only) */
+body[data-theme="dark"]{
+  --bg: #05060A;
+  --text: rgba(255,255,255,.92);
+  --muted: rgba(255,255,255,.66);
+  --line: rgba(255,255,255,.12);
+
+  --panel: rgba(255,255,255,.06);
+  --panel2: rgba(255,255,255,.09);
+
+  /* less “neon”, more premium */
+  --brand: #ff2d2d;
+  --brand2: #b80000;
+
+  --shadow: 0 18px 48px rgba(0,0,0,.55);
+}
+
+/* Background glow — tighter, cleaner */
+body[data-theme="dark"]::before{
+  background:
+    radial-gradient(900px 420px at 16% 6%, rgba(255,45,45,.14), transparent 72%),
+    radial-gradient(900px 420px at 86% 10%, rgba(184,0,0,.10), transparent 74%),
+    radial-gradient(900px 720px at 52% 96%, rgba(255,45,45,.08), transparent 76%),
+    linear-gradient(180deg, rgba(0,0,0,0), rgba(0,0,0,.12)) !important;
+}
+
+/* Header: crisp glass + subtle red accent line */
+body[data-theme="dark"] header{
+  background: rgba(0,0,0,.42) !important;
+  border-bottom: 1px solid rgba(255,255,255,.08) !important;
+}
+body[data-theme="dark"] header::after{
+  content:"";
+  position:absolute;
+  left:0; right:0; bottom:-1px;
+  height:1px;
+  background: linear-gradient(90deg, transparent, rgba(255,45,45,.35), transparent);
+  pointer-events:none;
+}
+
+/* Nav spacing + readability */
+nav.links{
+  gap: 34px !important;
+}
+nav.links a{
+  color: rgba(255,255,255,.70) !important;
+}
+nav.links a:hover{
+  background: rgba(255,45,45,.10) !important;
+  color: rgba(255,255,255,.92) !important;
+}
+
+/* Buttons: more “product” feel */
+.btn{
+  background: rgba(255,255,255,.06) !important;
+  border-color: rgba(255,255,255,.12) !important;
+}
+.btn:hover{
+  background: rgba(255,255,255,.09) !important;
+  border-color: rgba(255,255,255,.18) !important;
+}
+
+/* Primary: tighter gradient, cleaner shadow */
+.btn.primary{
+  background: linear-gradient(135deg, var(--brand), var(--brand2)) !important;
+  box-shadow: 0 14px 34px rgba(255,45,45,.18) !important;
+}
+
+/* Cards: more consistent surface, less “muddy” */
+.card{
+  background: linear-gradient(180deg, rgba(255,255,255,.075), rgba(255,255,255,.04)) !important;
+  border-color: rgba(255,255,255,.12) !important;
+}
+.tile, .metric, .step, details{
+  background: rgba(255,255,255,.045) !important;
+  border-color: rgba(255,255,255,.12) !important;
+}
+
+/* KPI blocks: sharper */
+.kpi{
+  background: rgba(0,0,0,.26) !important;
+  border-color: rgba(255,255,255,.12) !important;
+}
+
+/* Accent gradient text safe */
+.gradient{
+  background: linear-gradient(90deg, var(--brand), rgba(255,255,255,.92)) !important;
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  color: transparent !important;
+}
+
+/* Icons & badges: premium red tint */
+.icon, .badge{
+  background: rgba(255,45,45,.14) !important;
+  border-color: rgba(255,45,45,.26) !important;
+}
+
+/* Inputs: better contrast */
+input.btn, textarea.btn{
+  background: rgba(255,255,255,.05) !important;
+  border-color: rgba(255,255,255,.14) !important;
+}
+input.btn:focus, textarea.btn:focus{
+  outline: none !important;
+  border-color: rgba(255,45,45,.42) !important;
+  box-shadow: 0 0 0 4px rgba(255,45,45,.10) !important;
+}
+/* =========================
+   Premium Typography + Rhythm
+   Paste at END of <style>
+   ========================= */
+
+/* Global text smoothing */
+body{
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: geometricPrecision;
+}
+
+/* Container: чуть больше “воздуха” на больших экранах */
+@media (min-width: 1200px){
+  .container{
+    padding: 0 72px !important;
+  }
+}
+
+/* HERO headline: чище, меньше “давит” */
+h1{
+  letter-spacing: -1.2px !important;
+  line-height: 1.04 !important;
+  margin: 12px 0 10px !important;
+}
+
+/* Lead paragraph: главный “дорогой” эффект */
+.lead{
+  font-size: 17px !important;
+  line-height: 1.78 !important;
+  max-width: 68ch !important;
+  color: rgba(255,255,255,.70) !important;
+}
+
+/* Section titles */
+h2{
+  font-size: 24px !important;
+  letter-spacing: -0.35px !important;
+}
+
+/* Section subtitle */
+.sub{
+  font-size: 14.5px !important;
+  line-height: 1.75 !important;
+  color: rgba(255,255,255,.64) !important;
+  max-width: 78ch !important;
+}
+
+/* Card headings */
+.tile h3{
+  font-size: 16px !important;
+  letter-spacing: -0.2px !important;
+  margin-bottom: 8px !important;
+}
+.tile p,
+.metric p,
+.step p,
+details p{
+  font-size: 14px !important;
+  line-height: 1.75 !important;
+  color: rgba(255,255,255,.66) !important;
+}
+
+/* Nav links: меньше “шум”, больше аккуратности */
+nav.links a{
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  letter-spacing: .1px !important;
+}
+
+/* Buttons: чуть “премиальнее” */
+.btn{
+  font-weight: 650 !important;
+  letter-spacing: .1px !important;
+}
+.btn.primary{
+  letter-spacing: .15px !important;
+}
+
+/* KPI: выровнять визуальный ритм */
+.kpi .num{
+  font-size: 22px !important;
+  letter-spacing: -0.6px !important;
+}
+.kpi .lbl{
+  font-size: 12.5px !important;
+  letter-spacing: .2px !important;
+  color: rgba(255,255,255,.62) !important;
+}
+
+/* Spacing between sections (more “design system”) */
+section{
+  padding: 26px 0 !important;
+}
+.hero{
+  padding: 56px 0 22px !important;
+}
+
+/* Timeline steps: более “продуктовые” */
+.step h4{
+  font-size: 15px !important;
+  letter-spacing: -0.15px !important;
+}
+.badge{
+  font-size: 14px !important;
+}
+
+/* FAQ summary: сделать вопрос заметнее */
+summary{
+  font-size: 15px !important;
+  letter-spacing: -0.15px !important;
+}
+html{
+  scroll-behavior: smooth;
+  scroll-padding-top: 90px; /* чтобы якоря не прятались под липким header */
+}
+/* Bigger top nav buttons + shift them right */
+nav.links a{
+  font-size: 19px !important;     /* было 14px */
+  padding: 10px 14px !important;  /* было 8px 10px */
+  border-radius: 14px !important;
+}
+
+/* Make the whole links block sit more to the right */
+nav.links{
+  margin-left: auto !important;   /* толкает вправо */
+  margin-right: 80px !important;  /* отступ от правого края (меняй число) */
+  gap: 40px !important;           /* расстояние между кнопками */
+}
+header{
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 9999 !important;
+  transform: translateY(0);
+  transition: transform .25s ease, background-color .25s ease, backdrop-filter .25s ease;
+  will-change: transform;
+}
+
+header.is-hidden{
+  transform: translateY(-110%);
+}
+/* Header always on top (fix for being covered later) */
+header{
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  z-index: 999999 !important;
+}
+
+/* prevent content from going under the fixed header */
+main{
+  padding-top: 78px; /* подстрой: 70–90px */
+}
+header{
+  transform: translateY(0);
+  transition: transform .25s ease;
+  will-change: transform;
+}
+header.is-hidden{
+  transform: translateY(-110%);
+}
+/* FAQ smooth open/close */
+details.faq-item{ overflow: hidden; }
+
+details.faq-item summary{
+  cursor: pointer;
+  list-style: none;
+}
+details.faq-item summary::-webkit-details-marker{ display:none; }
+
+details.faq-item .faq-body{
+  height: 0;
+  overflow: hidden;
+  opacity: 0;
+  transform: translateY(-6px);
+  transition: height .32s ease, opacity .22s ease, transform .22s ease;
+  will-change: height, opacity, transform;
+}
+details.faq-item[open] .faq-body{
+  opacity: 1;
+  transform: translateY(0);
+}
+details.faq-item .faq-inner{
+  padding-top: 10px;
+}
+.kpi .lbl{
+  text-align: center;
+}
+
+.kpi .num{
+  text-align: center;
+}
+/* ===== MARKET: TAM/SAM/SOM circles (3 colors + correct label positions) ===== */
+.market-circles{
+  display:grid;
+  grid-template-columns: 1.2fr .8fr;
+  gap: 14px;
+  align-items: stretch;
+}
+@media (max-width: 980px){
+  .market-circles{ grid-template-columns: 1fr; }
+}
+
+.market-venn{
+  position: relative;
+  min-height: 460px;
+  border-radius: var(--radius);
+  border: 1px solid var(--line);
+  background: rgba(255,255,255,.04);
+  overflow:hidden;
+}
+body[data-theme="light"] .market-venn{
+  background: rgba(255,255,255,.96);
+}
+
+/* wrapper for circles */
+.venn-wrap{
+  position:absolute;
+  width: 700px;        /* было 465px */
+  height: 465px;
+
+  left: 35%;
+  
+  top: 60%;
+  transform: translate(-50%, -50%);
+}
+
+
+
+/* circle base */
+.v-circle{
+  position:absolute;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,.14);
+  overflow: hidden;
+}
+
+/* 3 distinct colors */
+.v-circle.tam{
+  width: 390px; height: 390px;
+  left: 118px; top: -13px;
+  background: rgba(239, 68, 68, .55); /* red */
+  border-color: rgba(239, 68, 68, .38);
+}
+.v-circle.sam{
+  width: 285px; height: 285px;
+  left: 170.5px;   /* центрируем относительно TAM */
+  top: 92px;
+  background: rgba(59, 130, 246, .45);
+  border-color: rgba(59, 130, 246, .33);
+}
+
+.v-circle.som{
+  width: 195px; height: 195px;
+  left: 215.5px;   /* центрируем относительно TAM */
+  top: 182px;
+  background: rgba(34, 197, 94, .40);
+  border-color: rgba(34, 197, 94, .30);
+}
+
+
+/* soft highlight inside circles */
+.v-circle::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  border-radius: 999px;
+  background: radial-gradient(240px 170px at 28% 22%, rgba(255,255,255,.20), transparent 70%);
+  pointer-events:none;
+}
+
+/* Label positioning */
+.v-label{
+  position:absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align:center;
+  font-weight: 900;
+  line-height: 1.15;
+  color: rgba(10,12,18,.92); /* dark text like example */
+}
+.v-label .k{
+  font-size: 14px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  opacity: .85;
+}
+.v-label .n{
+  font-size: 18px;
+  margin-top: 6px;
+  letter-spacing: -0.3px;
+}
+
+/* TAM centered */
+.v-circle.tam .v-label{
+  top: 15%;
+  transform: translate(-50%, -50%);
+}
+
+/* SAM text should be bottom-center of the PREVIOUS circle (TAM) */
+.v-circle.sam .v-label{
+  top: 22%;
+  transform: translate(-50%, -50%);
+}
+
+/* SOM text should be bottom-center of the PREVIOUS circle (SAM) */
+.v-circle.som .v-label{
+  top: 35%;
+  transform: translate(-50%, -50%);
+}
+
+/* Make it responsive: circles centered on small screens */
+@media (max-width: 980px){
+  .market-venn{ padding-top: 10px; }
+  .venn-wrap{
+    position:relative;
+    left: 0; top: 0;
+    margin: 0 auto;
+  }
+}
+/* Dashed callout lines */
+.v-dash{
+  position:absolute;
+  height: 0;
+  border-top: 2px dashed rgba(255,255,255,.50);
+  opacity: .9;
+  pointer-events:none;
+  filter: drop-shadow(0 6px 14px rgba(0,0,0,.35));
+}
+
+/* TAM -> right */
+.v-dash.tam{
+  top: 160px;     /* центр TAM по Y */
+  left: 510px;    /* правый край TAM (390) + чуть */
+  width: 130px;
+}
+
+/* SAM -> left */
+.v-dash.sam{
+  top: 235px;
+  left: 455px;     /* справа от круга */
+  width: 130px;
+}
+
+
+
+/* SOM -> right */
+.v-dash.som{
+  top: 305px;     /* центр SOM по Y */
+  left: 411px;    /* правый край SOM (97.5 + 195 = 292.5) */
+  width: 130px;
+}
+/* Text at end of dashed lines */
+.v-callout{
+  position:absolute;
+  font-weight: 800;
+  font-size: 14px;
+  letter-spacing: .4px;
+  white-space: nowrap;
+  z-index: 3;
+}
+
+/* TAM text (right side) */
+.v-callout.tam{
+  top: 152px;      /* чуть выше линии */
+  left: 650px;     /* конец линии TAM */
+}
+
+/* SAM text (left side) */
+.v-callout.sam{
+  top: 228px;
+  left: 600px;      /* правее линии */
+  text-align: left;
+}
+
+
+
+/* SOM text (right side) */
+.v-callout.som{
+  top: 297px;
+  left: 563px;
+}
+
+/* Dark theme */
+body[data-theme="dark"] .v-callout{
+  color: rgba(255,255,255,.85);
+}
+
+.market-right{
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  align-items: stretch;
+}
+
+.metric{
+  height: auto;
+}
+
+  </style>
+</head>
+
+<body data-theme="dark">
+  <header>
+    
+    <div class="container">
+      <div class="nav">
+        <a class="brand" href="#top" aria-label="antiBAD">
+          <div class="logo" aria-hidden="true"></div>
+          <div>
+            <div style="display:flex;align-items:baseline;gap:10px;">
+              <span style="font-size:16px;">antiBAD</span>
+              
+            </div>
+            <div style="font-size:12px;color:var(--muted);font-weight:700;margin-top:2px;">
+              Road Problem Solver
+            </div>
+          </div>
+        </a>
+
+        <nav class="links" aria-label="Navigation">
+          <a href="#problem">Problem</a>
+          <a href="#solution">Solution</a>
+          <a href="#market">Market</a>
+          <a href="#impact">Impact</a>
+          <a href="#faq">FAQ</a>
+        </nav>
+
+        <div class="nav-actions">
+          
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main id="top">
+    <!-- HERO -->
+    <section class="hero">
+      <div class="container">
+        <div class="hero-grid">
+          <div class="reveal">
+            
+            <h1>
+              <span class="gradient">antiBAD</span> is a digital assistant that prevents
+              <span class="gradient">wasted infrastructure budgets</span>
+            </h1>
+            <p class="lead">
+              The antiBAD system analyzes the condition of public roads using existing camera networks.
+              It identifies defects, assigns a <b>Severity rating (from 0 to 1)</b>, and flags <b>unnecessary</b> repair requests before they are wasted.
+            </p>
+
+            <div class="hero-actions">
+              <!-- ✅ Put your Streamlit link here -->
+              <a class="btn primary" href="https://huggingface.co/spaces/aqula21/AntiBAD" target="_blank" rel="noopener">
+                Try AI Demo
+              </a>
+
+              
+              
+            </div>
+
+            <div class="kpi-grid">
+              <div class="kpi">
+                <div class="num">More than <b>85%</b></div>
+                <div class="lbl">Precision on defect detection</div>
+              </div>
+              <div class="kpi">
+                <div class="num">0 to 1</div>
+                <div class="lbl">Assessing the importance of the problem</div>
+              </div>
+              <div class="kpi">
+                <div class="num">3 steps</div>
+                <div class="lbl">Scan → Diagnose → Allocate</div>
+              </div>
+            </div>
+          </div>
+
+          
+        </div>
+      </div>
+    </section>
+
+    <!-- PROBLEM -->
+    <section id="problem">
+      <div class="container">
+        <div class="section-head reveal">
+          <div>
+            <h2>The Problem</h2>
+            <p class="sub">
+              Many cities suffer from “ghost projects”: perfectly fine streets get renovated while nearby areas
+              require more attention. Decisions are often subjective, slow, and hard to verify.
+            </p>
+          
+
+        <div class="grid-3">
+          <div class="tile reveal">
+            <div class="icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M12 2l9 4v6c0 5-3.8 9.4-9 10-5.2-.6-9-5-9-10V6l9-4z" stroke="currentColor" stroke-width="1.8"/>
+                <path d="M8 12l2.3 2.3L16 8.7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+              </svg>
+            </div>
+            <h3>Subjectivity & corruption risk</h3>
+            <p>Budget allocation is often decided by people, not by objective infrastructure condition data.</p>
+          </div>
+
+          <div class="tile reveal">
+            <div class="icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M4 18V6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                <path d="M4 6h10l-2 3 2 3H4" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+                <path d="M12 18h8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                <path d="M14 14h6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+              </svg>
+            </div>
+            <h3>Ineffective repair work</h3>
+            <p>Repairs are either reactive (after incidents) or unnecessary (renovating already-good areas).</p>
+          </div>
+
+          <div class="tile reveal">
+            <div class="icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M7 17h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                <path d="M12 3v10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                <path d="M6 7l6-4 6 4v6a6 6 0 1 1-12 0V7z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <h3>Lack of transparency for the public</h3>
+            <p>Citizens can’t verify whether a street truly needed a multi-million renovation.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SOLUTION -->
+    <section id="solution">
+      <div class="container">
+        <div class="section-head reveal">
+          <div>
+            <h2>The Solution</h2>
+            <p class="sub">
+              antiBAD turns camera footage into actionable infrastructure development solutions: where the situation is bad,
+               how bad it is, and what should be funded first.
+            </p>
+          
+
+        <div class="timeline">
+          <div class="step reveal">
+            <div class="badge">1</div>
+            <div>
+              <h4>Scanning</h4>
+              <p>Processes video recordings from existing city CCTV networks or mobile cameras for continuous scanning of infrastructure.</p>
+            </div>
+          </div>
+
+          <div class="step reveal">
+            <div class="badge">2</div>
+            <div>
+              <h4>AI Diagnosis</h4>
+              <p>Computer Vision (YOLOv8 / segmentation) detects potholes, cracks, and erosion and assigns a <b>Severity Score (0-1)</b>.</p>
+            </div>
+          </div>
+
+          <div class="step reveal">
+            <div class="badge">3</div>
+            <div>
+              <h4>Verification</h4>
+              <p>Identifies areas that truly require repair, avoiding <b>unnecessary</b> spending</b>.</p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- MVP -->
+    
+
+    <!-- DEMO -->
+    
+
+    <!-- MARKET -->
+    <section id="market">
+      <div class="container">
+        <div class="section-head reveal">
+          <div>
+            <h2>Market</h2>
+            <p class="sub">
+              antiBAD is a GovTech / Smart City SaaS: infrastructure condition monitoring + budget integrity tooling.
+            </p>
+          
+
+        <div class="market-circles">
+
+  <!-- LEFT: circles -->
+  <div class="market-venn reveal">
+    <div class="venn-wrap">
+      <div class="v-circle tam">
+        <div class="v-label">
+          <div class="k">TAM</div>
+          <div class="n">$877.6B</div>
+        </div>
+      </div>
+
+      <div class="v-circle sam">
+        <div class="v-label">
+          <div class="k">SAM</div>
+          <div class="n">60B ₸ / yr</div>
+        </div>
+      </div>
+
+      <div class="v-circle som">
+        <div class="v-label">
+          <div class="k">SOM</div>
+          <div class="n">6B ₸ / yr</div>
+        </div>
+      </div>
+
+      <div class="v-dash tam"></div>
+      <div class="v-dash sam"></div>
+      <div class="v-dash som"></div>
+
+      <div class="v-callout tam">Global Smart City Market</div>
+      <div class="v-callout sam">Kazakhstan Road Budget</div>
+      <div class="v-callout som">Initial Pilot Contracts</div>
+    </div>
+  </div>
+
+  <!-- RIGHT: cards column -->
+  <div class="market-right">
+    <div class="metric reveal">
+      <div class="top">
+        <div class="name">Market Opportunity</div>
+        <div class="val">GovTech</div>
+      </div>
+      <p>
+        The global Smart City market exceeds $877B. In Kazakhstan alone,
+        annual road maintenance budgets exceed 60B ₸. antiBAD targets
+        data-driven infrastructure allocation within this segment.
+      </p>
+    </div>
+
+    <div class="metric reveal">
+      <div class="top">
+        <div class="name">Revenue Strategy</div>
+        <div class="val">SaaS Model</div>
+      </div>
+      <p>
+        Initial pilot projects with municipal administrations,
+        followed by annual licensing, dashboard access,
+        AI analytics subscriptions, and audit-ready reporting tools.
+      </p>
+    </div>
+  </div>
+
+</div>
+
+
+
+</div>
+
+      </div>
+    </section>
+
+    <!-- IMPACT -->
+    <section id="impact">
+      <div class="container">
+        <div class="section-head reveal">
+          <div>
+            <h2>Innovation & Impact</h2>
+            <p class="sub">
+              antiBAD is not “surveillance”. It’s a tool for <b>fiscal integrity</b>, public safety, and fair infrastructure investment.
+            </p>
+          
+
+        <div class="grid-3">
+          <div class="tile reveal">
+            <h3>Fairness</h3>
+            <p>Redirects resources to underserved districts instead of repeatedly renovating already-good central areas.</p>
+          </div>
+
+          <div class="tile reveal">
+            <h3>Sustainability</h3>
+            <p>Less unnecessary construction means lower material waste, emissions, and logistics costs.</p>
+          </div>
+
+          <div class="tile reveal">
+            <h3>Transparency</h3>
+            <p>Each recommendation can be backed by detections, severity, location, and an auditable history.</p>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:14px;padding:16px;" id="team">
+          <div class="reveal">
+            <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;">
+              <div style="font-weight:900;font-size:16px;">Team Superpower</div>
+              
+            </div>
+            <p style="margin:10px 0 0;color:var(--muted);line-height:1.75;">
+              We turn pixel-level detections into clear policy and budget decisions. Our strength is making AI outputs
+              understandable and usable for non-technical decision-makers: what to fix, when to fix it, and why.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FAQ -->
+    <section id="faq">
+      <div class="container">
+        <div class="section-head reveal">
+          <div>
+            <h2>FAQ</h2>
+            <p class="sub">Short answers to common questions from municipalities and stakeholders.</p>
+          </div>
+          
+        </div>
+
+        <div class="reveal">
+          <details class="faq-item">
+            <summary>What makes antiBAD different from typical monitoring systems?</summary>
+             <div class="faq-body">
+    <div class="faq-inner">
+            <p>antiBAD connects infrastructure condition to budgeting decisions. It prioritizes repairs based on evidence and flags unjustified renovation requests.</p>
+    </div>
+             </div>
+            
+          </details>
+
+          <details class="faq-item">
+            <summary>Do we need to install new cameras?</summary>
+             <div class="faq-body">
+    <div class="faq-inner">
+            <p>No. The goal is to use existing CCTV networks and/or mobile cameras where available.</p>
+    </div>
+             </div>
+          </details>
+
+          <details class="faq-item">
+            <summary>How do you validate model quality?</summary>
+             <div class="faq-body">
+    <div class="faq-inner">
+            <p>We use standard metrics (precision/recall), district-based testing, and calibration per camera type, lighting, and environment. Outputs can be logged for auditability.</p>
+    </div>
+             </div>
+          </details>
+
+          <details class="faq-item">
+            <summary>Cloud or on‑prem?</summary>
+             <div class="faq-body">
+    <div class="faq-inner">
+            <p>Both are possible. Deployment depends on local security, compliance, and integration requirements.</p>
+    </div>
+             </div>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    
+
+    <footer>
+      <div class="container" style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:center;">
+        <div>
+          <div style="font-weight:900;color:var(--text);">antiBAD</div>
+          <div style="margin-top:4px;">© <span id="year"></span> • AI-powered infrastructure auditing</div>
+        </div>
+        
+      </div>
+    </footer>
+  </main>
+
+  <script>
+    // Theme toggle
+    
+
+    // Reveal on scroll
+    const els = Array.from(document.querySelectorAll('.reveal'));
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if(e.isIntersecting){
+          e.target.classList.add('on');
+          io.unobserve(e.target);
+        }
+      });
+    }, { threshold: 0.12 });
+    els.forEach(el => io.observe(el));
+
+    // Demo preview
+    const file = document.getElementById('file');
+    const img = document.getElementById('img');
+    const ph = document.getElementById('ph');
+
+    file.addEventListener('change', () => {
+      const f = file.files?.[0];
+      if(!f) return;
+      const url = URL.createObjectURL(f);
+      img.src = url;
+      img.style.display = 'block';
+      ph.style.display = 'none';
+    });
+
+    
+
+    // Year
+    document.getElementById('year').textContent = new Date().getFullYear();
+  </script>
+  <script>
+  // Smooth FAQ animation for <details>
+  document.querySelectorAll('details.faq-item').forEach((d) => {
+    const body = d.querySelector('.faq-body');
+    const inner = d.querySelector('.faq-inner');
+    if (!body || !inner) return;
+
+    // If initially open
+    if (d.hasAttribute('open')) {
+      body.style.height = inner.scrollHeight + 'px';
+      body.style.opacity = '1';
+      body.style.transform = 'translateY(0)';
+    }
+
+    d.addEventListener('toggle', () => {
+      // OPEN
+      if (d.open) {
+        // start from 0 -> full height
+        body.style.height = '0px';
+        requestAnimationFrame(() => {
+          body.style.height = inner.scrollHeight + 'px';
+        });
+
+        // after animation: let it grow naturally
+        const onEnd = (e) => {
+          if (e.propertyName === 'height' && d.open) body.style.height = 'auto';
+          body.removeEventListener('transitionend', onEnd);
+        };
+        body.addEventListener('transitionend', onEnd);
+      }
+      // CLOSE
+      else {
+        // from auto/full -> 0
+        body.style.height = inner.scrollHeight + 'px';
+        requestAnimationFrame(() => {
+          body.style.height = '0px';
+        });
+      }
+    });
+  });
+</script>
+<script>
+  (function(){
+    const header = document.querySelector('header');
+    let lastY = window.scrollY;
+    let ticking = false;
+
+    function onScroll(){
+      const y = window.scrollY;
+
+      // всегда показывать в самом верху
+      if (y < 30){
+        header.classList.remove('is-hidden');
+        lastY = y;
+        return;
+      }
+
+      const goingDown = y > lastY;
+      const delta = Math.abs(y - lastY);
+
+      // фильтр мелких дрожаний
+      if (delta > 8){
+        if (goingDown) header.classList.add('is-hidden');
+        else header.classList.remove('is-hidden');
+        lastY = y;
+      }
+    }
+
+    window.addEventListener('scroll', () => {
+      if (!ticking){
+        window.requestAnimationFrame(() => {
+          onScroll();
+          ticking = false;
+        });
+        ticking = true;
+      }
+    }, { passive: true });
+  })();
+</script>
+<script>
+(() => {
+  const header = document.querySelector('header');
+  let lastY = window.scrollY;
+
+  window.addEventListener('scroll', () => {
+    const y = window.scrollY;
+
+    if (y < 30) { header.classList.remove('is-hidden'); lastY = y; return; }
+
+    const goingDown = y > lastY;
+    if (Math.abs(y - lastY) > 8) {
+      header.classList.toggle('is-hidden', goingDown);
+      lastY = y;
+    }
+  }, { passive: true });
+})();
+</script>
+
+</body>
+</html>
