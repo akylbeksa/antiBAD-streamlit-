@@ -27,7 +27,7 @@ ROOT = HERE.parent
 
 logger = logging.getLogger(__name__)
 
-MODEL_URL = "https://github.com/oracl4/RoadDamageDetection/raw/main/models/YOLOv8_Small_RDD.pt"  # noqa: E501
+MODEL_URL = "https://github.com/akylbeksa/antiBAD-streamlit-/tree/main/modelsYOLOv8_Small_RDD.pt"  # noqa: E501
 MODEL_LOCAL_PATH = ROOT / "./models/YOLOv8_Small_RDD.pt"
 download_file(MODEL_URL, MODEL_LOCAL_PATH, expected_size=89569358)
 
@@ -57,9 +57,9 @@ class Detection(NamedTuple):
     score: float
     box: np.ndarray
 
-st.title("Road Damage Detection - Realtime")
+st.title("Realtime")
 
-st.write("Detect the road damage in realtime using USB Webcam. This can be useful for on-site monitoring with personel on the ground. Select the video input device and start the inference.")
+st.write("Detect the road damage in realtime using USB Webcam.Select the video input device and start the inference.")
 
 # NOTE: The callback will be called in another thread,
 #       so use a queue here for thread-safety to pass the data
@@ -110,7 +110,6 @@ webrtc_ctx = webrtc_streamer(
 
 score_threshold = st.slider("Confidence Threshold", min_value=0.0, max_value=1.0, value=0.5, step=0.05)
 
-st.write("Lower the threshold if there is no damage detected, and increase the threshold if there is false prediction.")
 
 st.divider()
 
