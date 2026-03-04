@@ -1,21 +1,22 @@
-import os
 import logging
+import queue
 from pathlib import Path
-from typing import NamedTuple
+from typing import List, NamedTuple
 
+import av
 import cv2
 import numpy as np
 import streamlit as st
+from streamlit_webrtc import WebRtcMode, webrtc_streamer
 
 # Deep learning framework
 from ultralytics import YOLO
-from PIL import Image
-from io import BytesIO
 
 from sample_utils.download import download_file
+from sample_utils.get_STUNServer import getSTUNServer
 
 st.set_page_config(
-    page_title="Image Detection",
+    page_title="Realtime Detection",
     page_icon="📷",
     layout="centered",
     initial_sidebar_state="expanded"
@@ -26,9 +27,13 @@ ROOT = HERE.parent
 
 logger = logging.getLogger(__name__)
 
-MODEL_URL = "https://github.com/oracl4/RoadDamageDetection/raw/main/models/YOLOv8_Small_RDD.pt"  # noqa: E501
+MODEL_URL = "https://github.com/akylbeksa/antiBAD-streamlit-/tree/main/modelsYOLOv8_Small_RDD.pt"  # noqa: E501
 MODEL_LOCAL_PATH = ROOT / "./models/YOLOv8_Small_RDD.pt"
 download_file(MODEL_URL, MODEL_LOCAL_PATH, expected_size=89569358)
+
+# STUN Server
+STUN_STRING = "stun:" + str(getSTUNServer())
+STUN_SERVER = [{"urls": [STUN_STRING]}]
 
 # Session-specific caching
 # Load the model
@@ -52,30 +57,25 @@ class Detection(NamedTuple):
     score: float
     box: np.ndarray
 
-st.title("Road Damage Detection - Image")
-st.write("Detect the road damage in using an Image input. Upload the image and start detecting. This section can be useful for examining baseline data.")
+st.title("Realtime")
 
-image_file = st.file_uploader("Upload Image", type=['png', 'jpg'])
+st.write("Detect the road damage in realtime using USB Webcam.Select the video input device and start the inference.")
 
-score_threshold = st.slider("Confidence Threshold", min_value=0.0, max_value=1.0, value=0.5, step=0.05)
-st.write("Lower the threshold if there is no damage detected, and increase the threshold if there is false prediction.")
+# NOTE: The callback will be called in another thread,
+#       so use a queue here for thread-safety to pass the data
+#       from inside to outside the callback.
+# TODO: A general-purpose shared state object may be more useful.
+result_queue: "queue.Queue[List[Detection]]" = queue.Queue()
 
-if image_file is not None:
-
-    # Load the image
-    image = Image.open(image_file)
+def video_frame_callback(frame: av.VideoFrame) -> av.VideoFrame:
     
-    col1, col2 = st.columns(2)
-
-    # Perform inference
-    _image = np.array(image)
-    h_ori = _image.shape[0]
-    w_ori = _image.shape[1]
-
-    image_resized = cv2.resize(_image, (640, 640), interpolation = cv2.INTER_AREA)
+    image = frame.to_ndarray(format="bgr24")
+    h_ori = image.shape[0]
+    w_ori = image.shape[1]
+    image_resized = cv2.resize(image, (640, 640), interpolation = cv2.INTER_AREA)
     results = net.predict(image_resized, conf=score_threshold)
     
-    # Save the results
+    # Save the results on the queue
     for result in results:
         boxes = result.boxes.cpu().numpy()
         detections = [
@@ -87,29 +87,35 @@ if image_file is not None:
             )
             for _box in boxes
         ]
+        result_queue.put(detections)
 
     annotated_frame = results[0].plot()
-    _image_pred = cv2.resize(annotated_frame, (w_ori, h_ori), interpolation = cv2.INTER_AREA)
+    _image = cv2.resize(annotated_frame, (w_ori, h_ori), interpolation = cv2.INTER_AREA)
 
-    # Original Image
-    with col1:
-        st.write("#### Image")
-        st.image(_image)
-    
-    # Predicted Image
-    with col2:
-        st.write("#### Predictions")
-        st.image(_image_pred)
+    return av.VideoFrame.from_ndarray(_image, format="bgr24")
 
-        # Download predicted image
-        buffer = BytesIO()
-        _downloadImages = Image.fromarray(_image_pred)
-        _downloadImages.save(buffer, format="PNG")
-        _downloadImagesByte = buffer.getvalue()
+webrtc_ctx = webrtc_streamer(
+    key="road-damage-detection",
+    mode=WebRtcMode.SENDRECV,
+    rtc_configuration={"iceServers": STUN_SERVER},
+    video_frame_callback=video_frame_callback,
+    media_stream_constraints={
+        "video": {
+            "width": {"ideal": 1280, "min": 800},
+        },
+        "audio": False
+    },
+    async_processing=True,
+)
 
-        downloadButton = st.download_button(
-            label="Download Prediction Image",
-            data=_downloadImagesByte,
-            file_name="RDD_Prediction.png",
-            mime="image/png"
-        )
+score_threshold = st.slider("Confidence Threshold", min_value=0.0, max_value=1.0, value=0.5, step=0.05)
+
+
+st.divider()
+
+if st.checkbox("Show Predictions Table", value=False):
+    if webrtc_ctx.state.playing:
+        labels_placeholder = st.empty()
+        while True:
+            result = result_queue.get()
+            labels_placeholder.table(result)
